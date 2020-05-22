@@ -1,0 +1,81 @@
+body {
+	margin: 0;
+	font-family: clear sans, helvetica neue, Arial, sans-serif;
+	background-color: #EFEDEE;
+}
+
+
+
+board-container {
+	display: block;
+    position: relative;
+	margin: 25vw;
+	width: 50vw;
+	height: 50vw;
+	--font-size: 6.5vw;
+}
+@media (min-aspect-ratio: 1/1) {
+	board-container {
+		margin: 25vh auto;
+		width: 50vh;
+		height: 50vh;
+		--font-size: 6.5vh;
+	}
+}
+board {
+	display: block;
+	position: absolute;
+	height: 100%;
+	width: 100%;
+	user-select: none;
+}
+board-render, board-input {
+	position: absolute;
+	height: 100%;
+	width: 100%;
+}
+board-row {
+    display: flex;
+    height: 20%;
+}
+board-input board-cell {
+	border-color: transparent;
+}
+board-cell {
+    display: flex;
+	position: relative;
+    width: 20%;
+    border: solid 1px;
+	border-radius: 20%;
+    box-sizing: border-box;
+    line-height: auto;
+    font-size: var(--font-size);
+    font-weight: 700;
+    align-items: center;
+    justify-content: center;
+	transition: border-radius 0.15s ease-in-out;
+}
+board board-cell.connected_-1_0 {
+	border-bottom-left-radius: 0;
+	border-bottom-right-radius: 0;
+}
+board board-cell.connected_1_0 {
+	border-top-left-radius: 0;
+	border-top-right-radius: 0;
+}
+board board-cell.connected_0_-1 {
+	border-bottom-right-radius: 0;
+	border-top-right-radius: 0;
+}
+board board-cell.connected_0_1 {
+	border-bottom-left-radius: 0;
+	border-top-left-radius: 0;
+}
+
+board-input {
+	visibility: none;
+}
+board-input board-cell {
+	cursor: grab;
+}
+
