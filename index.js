@@ -59,7 +59,7 @@ function setDragHandlers(board) {
 				cell.el.classList.add("connected");
 			};
 
-			cell.inputEl.onmouseenter = cell.inputEl.ontouchmove = function(e) {
+			cell.inputEl.onmouseenter = function(e) {
 				if (!dragging)
 					return;
 				if (cell == selectedCells[selectedCells.length-1].value)
@@ -87,6 +87,11 @@ function setDragHandlers(board) {
 			};
 		}
 	
+	window.ontouchmove = function(e) {
+		const el = document.elementFromPoint(e.touches[0].pageX, e.touches[0].pageY);
+		if (el.tagName == "board-cell" && board.inputEl.contains(el))
+			el.onmouseenter(e);
+	}
 	window.onmouseup = window.ontouchend = function(e) {
 		console.log("touch exit");
 		if (!dragging)
