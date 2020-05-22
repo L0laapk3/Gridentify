@@ -89,7 +89,7 @@ function setDragHandlers(board) {
 	
 	window.ontouchmove = function(e) {
 		const el = document.elementFromPoint(e.touches[0].pageX, e.touches[0].pageY);
-		if (el.tagName == "board-cell" && board.inputEl.contains(el))
+		if (el.tagName == "BOARD-CELL" && board.inputEl.contains(el))
 			el.onmouseenter(e);
 	}
 	window.onmouseup = window.ontouchend = function(e) {

@@ -9,12 +9,12 @@ body {
 board-container {
 	display: block;
     position: relative;
-	margin: 25vh 10vw;
-	width: 80vw;
-	height: 80vw;
-	--font-size: calc(6.5vw / 5 * 8);
+	margin: 25vh 5vw;
+	width: 90vw;
+	height: 90vw;
+	--font-size: calc(6.5vw / 5 * 9);
 }
-@media (min-aspect-ratio: 5/8) {
+@media (min-aspect-ratio: 5/9) {
 	board-container {
 		margin: 25vh auto;
 		width: 50vh;
