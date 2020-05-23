@@ -32,7 +32,7 @@ function newGame() {
 	socket = new WebSocket("wss://server.lucasholten.com:21212");
 	socket.addEventListener('open', function (e) {
 		if (!localStorage.username)
-			usernamePrompt();
+			usernamePrompt(true);
 		this.send('"' + localStorage.username + '"');
 	});
 	socket.addEventListener('close', function (e) {
@@ -88,6 +88,8 @@ function newGame() {
 	});
 
 	socket.sendTask = function() {
+		if (this.readyState >= WebSocket.CLOSING)
+			return this.close();
 		this.send(JSON.stringify(submitQueue[0].map(c => 5*c.x + c.y)));
 	};
 }
@@ -152,11 +154,15 @@ function updateColor(cell) {
 }
 
 
-function usernamePrompt() {
-	localStorage.username = prompt("set username");
-	while (!localStorage.username)
-		localStorage.username = prompt("set username");
-	document.getElementsByTagName("name")[0].innerText = localStorage.username;
+function usernamePrompt(noReset) {
+	let newUsername;
+	while ((!localStorage.username && (newUsername === null || newUsername === undefined || newUsername.length == 0)) || newUsername === undefined)
+		newUsername = prompt("Change username");
+	if (newUsername === null || newUsername.length == 0 || newUsername == localStorage.username)
+		return;
+	document.getElementsByTagName("name")[0].innerText = localStorage.username = newUsername;
+	if (noReset !== true)
+		resetGame();
 }
 
 
