@@ -45,6 +45,9 @@ function updateColor(cell) {
 }
 
 
+let score;
+let scoreEl;
+
 function setDragHandlers(board) {
 	
 	let dragging = false;
@@ -57,6 +60,7 @@ function setDragHandlers(board) {
 				dragging = true;
 				selectedCells = [cell];
 				cell.el.classList.add("connected");
+				e.preventDefault();
 			};
 
 			cell.inputEl.onmouseenter = function(e) {
@@ -91,12 +95,15 @@ function setDragHandlers(board) {
 		const el = document.elementFromPoint(e.touches[0].pageX, e.touches[0].pageY);
 		if (el.tagName == "BOARD-CELL" && board.inputEl.contains(el))
 			el.onmouseenter(e);
+		e.preventDefault();
 	}
 	window.onmouseup = window.ontouchend = function(e) {
 		console.log("touch exit");
 		if (!dragging)
 			return;
 		if (selectedCells.length > 1) {
+			score += selectedCells.length * selectedCells[0].value;
+			scoreEl.innerText = score;
 			socket.send(JSON.stringify(selectedCells.map(c => 5*c.x + c.y)));
 		}
 		endDrag();
@@ -171,6 +178,9 @@ function createBoard() {
 	boardEl.appendChild(renderEl);
 	boardEl.appendChild(animationEl);
 	boardEl.appendChild(inputEl);
+
+	score = 0;
+	scoreEl = document.getElementsByTagName("score")[0];
 
 	setDragHandlers(board);	
 
