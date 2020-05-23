@@ -11,7 +11,6 @@ const bodyLoadedPromise = new Promise(done => {
 		document.getElementsByTagName("reset-container")[0].onclick = resetGame;
 		
 		bodyLoaded = true;
-		this.console.log(loadedData);
 		if (loadedData)
 			setGameState(loadedData);
 	}
@@ -32,8 +31,6 @@ function newGame() {
 
 	socket = new WebSocket("wss://server.lucasholten.com:21212");
 	socket.addEventListener('open', function (e) {
-		console.log("opened");
-
 		if (!localStorage.username)
 			usernamePrompt();
 		this.send('"' + localStorage.username + '"');
@@ -44,7 +41,6 @@ function newGame() {
 	});
 
 	socket.addEventListener('message', function (e) {
-		console.log('Message from server ', e);
 
 		loadedData = JSON.parse(e.data);
 
@@ -53,19 +49,33 @@ function newGame() {
 			if (bodyLoaded)
 				setGameState(loadedData);
 		} else {
-			for (let i = 0; i < 5; i++)
+			submitQueue.shift();
+			for (let i = 0; i < 5; i++) {
+				dataInput:
 				for (let j = 0; j < 5; j++) {
 					const cell = board[i][j];
-					if (cell.value == "?")
+					if (cell.value == "?") {
+						for (let submitTask of submitQueue)
+							if (submitTask.includes(cell))
+								continue dataInput;
 						setCell(cell, loadedData[5*i+j]);
-					else if (submitQueue.length == 1 && cell.value != loadedData[5*i+j])
-						alert("sumting wrong");
+					} else if (submitQueue.length == 1 && cell.value != loadedData[5*i+j]) {
+						for (let submitTask of submitQueue)
+							if (submitTask[submitTask.length - 1] == cell)
+								continue dataInput;
+						console.error(cell, "is", cell.value, "but server says", loadedData[5*i+j]);
+						setCell(cell, loadedData[5*i+j]);
+					}
 				}
-			submitQueue.pop();
+			}
 			if (submitQueue.length >= 1)
-				this.send(submitQueue[0]);
+				this.sendTask();
 		}
 	});
+
+	socket.sendTask = function() {
+		this.send(JSON.stringify(submitQueue[0].map(c => 5*c.x + c.y)));
+	};
 }
 
 function resetGame() {
@@ -88,7 +98,6 @@ let board;
 function setCell(cell, val) {
 	cell.value = val;
 	if (val == "?" || val == 0) {
-		console.log("yo", cell);
 		cell.innerEl.style.setProperty("transition", "none");
 		cell.innerEl.style.setProperty("color", "transparent");
 		cell.innerEl.offsetHeight; // flush css
@@ -131,7 +140,7 @@ function setDragHandlers(board) {
 				if (cell.value == "?")
 					return;
 				dragging = true;
-				selectedCells = [cell];
+				selectedCells = [[cell]];
 				cell.el.classList.add("connected");
 				e.preventDefault();
 			};
@@ -139,33 +148,54 @@ function setDragHandlers(board) {
 			cell.inputEl.onmouseenter = function(e) {
 				if (!dragging)
 					return;
-				if (cell == selectedCells[selectedCells.length-1].value)
+				const lastMove = selectedCells[selectedCells.length-1];
+				if (cell == lastMove[lastMove.length-1].value)
 					return;
-				if (cell.value != selectedCells[0].value)
-					return;
-				let index = selectedCells.indexOf(cell);
-				if (index >= 0) {
-					while (selectedCells.length >= index + 2) {
-						const removedCell = selectedCells.pop();
-						removedCell.el.classList.remove("connected_" + (removedCell.x - selectedCells[selectedCells.length-1].x) + "_" + (removedCell.y - selectedCells[selectedCells.length-1].y));
-						selectedCells[selectedCells.length-1].el.classList.remove("connected_" + (selectedCells[selectedCells.length-1].x - removedCell.x) + "_" + (selectedCells[selectedCells.length-1].y - removedCell.y));
-						selectedCells[selectedCells.length-1].el.classList.remove("connected");
+				for (let i = 0; i < selectedCells.length; i++) {
+					const move = selectedCells[i];
+					let index = move.indexOf(cell);
+					if (index < 0)
+						continue;
+					while (move.length >= index + 2) {
+						const removedCell = move.pop();
+						removedCell.el.classList.remove("connected_" + (removedCell.x - move[move.length-1].x) + "_" + (removedCell.y - move[move.length-1].y));
+						move[move.length-1].el.classList.remove("connected_" + (move[move.length-1].x - removedCell.x) + "_" + (move[move.length-1].y - removedCell.y));
+						move[move.length-1].el.classList.remove("connected");
+					}
+					for (let j = selectedCells.length; --j > i;) {
+						const move = selectedCells.pop();
+						for (let k = 1; k < move.length; k++) {
+							const removedCell = move[k];
+							const nextCell = move[k-1];
+							removedCell.el.classList.remove("connected_" + (removedCell.x - nextCell.x) + "_" + (removedCell.y - nextCell.y));
+							nextCell.el.classList.remove("connected_" + (nextCell.x - removedCell.x) + "_" + (nextCell.y - removedCell.y));
+							nextCell.el.classList.remove("connected");
+						}
 					}
 					return;
 				}
 
-				if (Math.abs(cell.x - selectedCells[selectedCells.length-1].x) + Math.abs(cell.y - selectedCells[selectedCells.length-1].y) != 1)
+				if (Math.abs(cell.x - lastMove[lastMove.length-1].x) + Math.abs(cell.y - lastMove[lastMove.length-1].y) != 1)
 					return;
-
-				selectedCells[selectedCells.length-1].el.classList.add("connected_" + (selectedCells[selectedCells.length-1].x - cell.x) + "_" + (selectedCells[selectedCells.length-1].y - cell.y));
-				cell.el.classList.add("connected_" + (cell.x - selectedCells[selectedCells.length-1].x) + "_" + (cell.y - selectedCells[selectedCells.length-1].y));
+				
+				if (cell.value != lastMove[lastMove.length-1].value && cell.value != selectedCells[0][0].value * selectedCells.map(m => m.length).reduce((a, b) => a * b))
+					return;
+				lastMove[lastMove.length-1].el.classList.add("connected_" + (lastMove[lastMove.length-1].x - cell.x) + "_" + (lastMove[lastMove.length-1].y - cell.y));
+				cell.el.classList.add("connected_" + (cell.x - lastMove[lastMove.length-1].x) + "_" + (cell.y - lastMove[lastMove.length-1].y));
 				cell.el.classList.add("connected");
-				selectedCells.push(cell);
+				if (cell.value == lastMove[lastMove.length-1].value)
+					lastMove.push(cell);
+				else 
+					selectedCells.push([lastMove[lastMove.length-1], cell]);
 			};
 		}
 	
+	let lastMoveEl;
 	window.ontouchmove = function(e) {
 		const el = document.elementFromPoint(e.touches[0].pageX, e.touches[0].pageY);
+		if (el == lastMoveEl)
+			return;
+		lastMoveEl = el;
 		if (el.tagName == "BOARD-CELL" && board.inputEl.contains(el))
 			el.onmouseenter(e);
 		e.preventDefault();
@@ -173,17 +203,22 @@ function setDragHandlers(board) {
 	window.onmouseup = window.ontouchend = function(e) {
 		if (!dragging)
 			return;
-		if (selectedCells.length > 1) {
-			const scoreIncrease = selectedCells.length * selectedCells[0].value;
-			score += scoreIncrease;
+		const lastMove = selectedCells[selectedCells.length-1];
+		if (lastMove.length > 1) {
+			let scoreIncrease = selectedCells[0][0].value;
+			for (let move of selectedCells) {
+				scoreIncrease *= move.length;
+				score += scoreIncrease;
+				for (let i = 0; i < move.length - 1; i++)
+					setCell(move[i], "?", false);
+			}
+			setCell(lastMove[lastMove.length-1], scoreIncrease);
 			scoreEl.innerText = score;
-			for (let i = 0; i < selectedCells.length - 1; i++)
-				setCell(selectedCells[i], "?", false);
-			setCell(selectedCells[selectedCells.length-1], scoreIncrease);
-			const submitTask = JSON.stringify(selectedCells.map(c => 5*c.x + c.y));
-			submitQueue.push(submitTask);
-			if (submitQueue.length == 1)
-				socket.send(submitTask);
+			const queueEmpty = submitQueue.length == 0;
+
+			submitQueue.push(...selectedCells);
+			if (queueEmpty)
+				socket.sendTask();
 		}
 		endDrag();
 		e.stopPropagation();
@@ -200,13 +235,14 @@ function setDragHandlers(board) {
 			endDrag();
 	};
 	function endDrag() {
-		for (let cell of selectedCells) {
-			cell.el.classList.remove("connected");
-			cell.el.classList.remove("connected_-1_0");
-			cell.el.classList.remove("connected_1_0");
-			cell.el.classList.remove("connected_0_-1");
-			cell.el.classList.remove("connected_0_1");
-		}
+		for (let move of selectedCells)
+			for (let cell of move) {
+				cell.el.classList.remove("connected");
+				cell.el.classList.remove("connected_-1_0");
+				cell.el.classList.remove("connected_1_0");
+				cell.el.classList.remove("connected_0_-1");
+				cell.el.classList.remove("connected_0_1");
+			}
 		dragging = false;
 		selectedCells = undefined;
 	}
