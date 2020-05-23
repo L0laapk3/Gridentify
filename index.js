@@ -1,52 +1,124 @@
-const socket = new WebSocket("wss://server.lucasholten.com:21212");
-
+let bodyLoaded = false;
+let loadedData;
+let score;
+let scoreEl;
 const bodyLoadedPromise = new Promise(done => {
 	window.onload = function() {
 		this.createBoard();
+		document.getElementsByTagName("name-container")[0].onclick = usernamePrompt;
+		document.getElementsByTagName("name")[0].innerText = localStorage.username;
+		scoreEl = document.getElementsByTagName("score")[0];
+		document.getElementsByTagName("reset-container")[0].onclick = resetGame;
+		
+		bodyLoaded = true;
+		this.console.log(loadedData);
+		if (loadedData)
+			setGameState(loadedData);
 	}
-	done();
 });
 
-socket.addEventListener('open', function (e) {
-	console.log("opened");
+let socket;
+let submitQueue = [];
 
-	socket.send('"my name jeff"');
-});
-socket.addEventListener('close', function (e) {
-	alert("fuck");
-});
+newGame();
+function newGame() {
 
-socket.addEventListener('message', function (e) {
-	console.log('Message from server ', e);
+	if (socket) {
+		socket.done = true;
+		socket.close();
+	}
+	score = 0;
+	loadedData = undefined;
 
-	bodyLoadedPromise.then(_ => {
-		const data = JSON.parse(e.data);
-		for (let i = 0; i < 5; i++)
-			for (let j = 0; j < 5; j++)
-				setCell(i, j, data[5*i + j]);
+	socket = new WebSocket("wss://server.lucasholten.com:21212");
+	socket.addEventListener('open', function (e) {
+		console.log("opened");
+
+		if (!localStorage.username)
+			usernamePrompt();
+		this.send('"' + localStorage.username + '"');
 	});
-});
+	socket.addEventListener('close', function (e) {
+		if (!this.done)
+			alert("socket disconnect. Please refresh");
+	});
+
+	socket.addEventListener('message', function (e) {
+		console.log('Message from server ', e);
+
+		loadedData = JSON.parse(e.data);
+
+		if (!this.boardCreated) {
+			this.boardCreated = true;
+			if (bodyLoaded)
+				setGameState(loadedData);
+		} else {
+			for (let i = 0; i < 5; i++)
+				for (let j = 0; j < 5; j++) {
+					const cell = board[i][j];
+					if (cell.value == "?")
+						setCell(cell, loadedData[5*i+j]);
+					else if (submitQueue.length == 1 && cell.value != loadedData[5*i+j])
+						alert("sumting wrong");
+				}
+			submitQueue.pop();
+			if (submitQueue.length >= 1)
+				this.send(submitQueue[0]);
+		}
+	});
+}
+
+function resetGame() {
+	if (!loadedData)
+		return;
+	for (let i = 0; i < 5; i++)
+		for (let j = 0; j < 5; j++)
+			setCell(board[i][j], 0);
+	newGame();
+}
+
+function setGameState(data) {
+	for (let i = 0; i < 5; i++)
+		for (let j = 0; j < 5; j++)
+			setCell(board[i][j], data[5*i + j]);
+}
 
 
 let board;
-function setCell(x, y, val) {
-	board[x][y].value = val;
-	board[x][y].el.innerText = val;
-	updateColor(board[x][y]);
+function setCell(cell, val) {
+	cell.value = val;
+	if (val == "?" || val == 0) {
+		console.log("yo", cell);
+		cell.innerEl.style.setProperty("transition", "none");
+		cell.innerEl.style.setProperty("color", "transparent");
+		cell.innerEl.offsetHeight; // flush css
+		cell.innerEl.style.setProperty("transition", "");
+		if (val == 0)
+			updateColor(cell);
+	} else {
+		cell.innerEl.innerText = val;
+		cell.innerEl.style.setProperty("color", "");
+		updateColor(cell);
+	}
 }
 function updateColor(cell) {
 	const COLORS = [[158, 193, 207], [158, 224, 158], [253, 253, 151], [254, 177, 68], [255, 102, 99], [204, 153, 201]];
 	let lval = cell.value >= 4 ? Math.min(Math.log2(cell.value) / 2, COLORS.length - 1) : ((cell.value || 2) - 1) / 4;
 	for (let i = 1; i < COLORS.length; i++)
 		if (--lval <= 0) {
-			cell.el.style.setProperty("background-color", "rgb(" + ((1+lval) * COLORS[i][0] - lval * COLORS[i-1][0]) + "," + ((1+lval) * COLORS[i][1] - lval * COLORS[i-1][1]) + "," + ((1+lval) * COLORS[i][2] - lval * COLORS[i-1][2]) + ")");
+			cell.el.style.setProperty("--bg", "rgb(" + ((1+lval) * COLORS[i][0] - lval * COLORS[i-1][0]) + "," + ((1+lval) * COLORS[i][1] - lval * COLORS[i-1][1]) + "," + ((1+lval) * COLORS[i][2] - lval * COLORS[i-1][2]) + ")");
 			return;
 		}
 }
 
 
-let score;
-let scoreEl;
+function usernamePrompt() {
+	localStorage.username = prompt("set username");
+	while (!localStorage.username)
+		localStorage.username = prompt("set username");
+	document.getElementsByTagName("name")[0].innerText = localStorage.username;
+}
+
 
 function setDragHandlers(board) {
 	
@@ -56,7 +128,8 @@ function setDragHandlers(board) {
 		for (let j = 0; j < 5; j++) {
 			const cell = board[i][j];
 			cell.inputEl.onmousedown = cell.inputEl.ontouchstart = function(e) {
-				console.log("touch start");
+				if (cell.value == "?")
+					return;
 				dragging = true;
 				selectedCells = [cell];
 				cell.el.classList.add("connected");
@@ -98,13 +171,19 @@ function setDragHandlers(board) {
 		e.preventDefault();
 	}
 	window.onmouseup = window.ontouchend = function(e) {
-		console.log("touch exit");
 		if (!dragging)
 			return;
 		if (selectedCells.length > 1) {
-			score += selectedCells.length * selectedCells[0].value;
+			const scoreIncrease = selectedCells.length * selectedCells[0].value;
+			score += scoreIncrease;
 			scoreEl.innerText = score;
-			socket.send(JSON.stringify(selectedCells.map(c => 5*c.x + c.y)));
+			for (let i = 0; i < selectedCells.length - 1; i++)
+				setCell(selectedCells[i], "?", false);
+			setCell(selectedCells[selectedCells.length-1], scoreIncrease);
+			const submitTask = JSON.stringify(selectedCells.map(c => 5*c.x + c.y));
+			submitQueue.push(submitTask);
+			if (submitQueue.length == 1)
+				socket.send(submitTask);
 		}
 		endDrag();
 		e.stopPropagation();
@@ -155,17 +234,21 @@ function createBoard() {
 		const row = [];
 		for (let j = 0; j < 5; j++) {
 			const cellEl = document.createElement("board-cell");
+			const cellInnerEl = document.createElement("board-cell-inner");
 			const cellInputEl = document.createElement("board-cell");
 			const cell = {
 				x: i,
 				y: j,
 				el: cellEl,
+				innerEl: cellInnerEl,
 				inputEl: cellInputEl,
 				value: undefined
 			}
+			cellEl.style.setProperty("--val", 0);
 			
 			updateColor(cell);
 			row[j] = cell;
+			cellEl.appendChild(cellInnerEl);
 			rowEl.appendChild(cellEl);
 			rowInputEl.appendChild(cellInputEl);
 		}
@@ -178,9 +261,6 @@ function createBoard() {
 	boardEl.appendChild(renderEl);
 	boardEl.appendChild(animationEl);
 	boardEl.appendChild(inputEl);
-
-	score = 0;
-	scoreEl = document.getElementsByTagName("score")[0];
 
 	setDragHandlers(board);	
 
