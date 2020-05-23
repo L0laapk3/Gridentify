@@ -36,8 +36,10 @@ function newGame() {
 		this.send('"' + localStorage.username + '"');
 	});
 	socket.addEventListener('close', function (e) {
-		if (!this.done)
-			alert("socket disconnect. Please refresh");
+		if (!this.done) {
+			alert("socket disconnected. Sorry!");
+			resetGame();
+		}
 	});
 
 	socket.addEventListener('message', function (e) {
@@ -70,12 +72,29 @@ function newGame() {
 			}
 			if (submitQueue.length >= 1)
 				this.sendTask();
+			else {
+				for (let i = 0; i < 5; i++)
+					for (let j = 0; j < 4; j++)
+						if (board[i][j].value == board[i][j+1].value)
+							return;
+				for (let i = 0; i < 4; i++)
+					for (let j = 0; j < 5; j++)
+						if (board[i][j].value == board[i+1][j].value)
+							return;
+				this.done = true;
+				gameOver();
+			}
 		}
 	});
 
 	socket.sendTask = function() {
 		this.send(JSON.stringify(submitQueue[0].map(c => 5*c.x + c.y)));
 	};
+}
+
+function gameOver() {
+	alert("Game over, you scored " + score + "!");
+	resetGame();
 }
 
 function resetGame() {
@@ -98,17 +117,17 @@ function setGameState(data) {
 let board;
 function setCell(cell, val) {
 	cell.value = val;
-	if (val == "?" || val == 0) {
+	if (val == "?") {
 		cell.innerEl.style.setProperty("transition", "none");
 		cell.innerEl.style.setProperty("color", "transparent");
 		cell.innerEl.offsetHeight; // flush css
 		cell.innerEl.style.setProperty("transition", "");
-		if (val == 0)
-			updateColor(cell);
 	} else {
-		cell.innerEl.innerText = val;
-		cell.innerEl.style.setProperty("color", "");
-		console.log(val);
+		if (val > 0) {
+			cell.innerEl.innerText = val;
+			cell.innerEl.style.setProperty("color", "");
+		} else
+			cell.innerEl.style.setProperty("color", "transparent");
 		if (val >= 10000)
 			cell.innerEl.style.setProperty("--font-scale", 0.48);
 		else if (val >= 1000)
@@ -122,8 +141,9 @@ function setCell(cell, val) {
 }
 
 function updateColor(cell) {
-	const COLORS = [[158, 193, 207], [158, 224, 158], [253, 253, 151], [254, 177, 68], [255, 102, 99], [204, 153, 201]];
+	const COLORS = [[158, 193, 207], [158, 224, 158], [253, 253, 151], [254, 177, 68], [255, 102, 99], [204, 153, 201], [158, 193, 207]];
 	let lval = cell.value >= 4 ? Math.min(Math.log2(cell.value) / 2, COLORS.length - 1) : ((cell.value || 2) - 1) / 4;
+	lval = lval % 6;
 	for (let i = 1; i < COLORS.length; i++)
 		if (--lval <= 0) {
 			cell.el.style.setProperty("--bg", "rgb(" + ((1+lval) * COLORS[i][0] - lval * COLORS[i-1][0]) + "," + ((1+lval) * COLORS[i][1] - lval * COLORS[i-1][1]) + "," + ((1+lval) * COLORS[i][2] - lval * COLORS[i-1][2]) + ")");
@@ -282,6 +302,7 @@ function createBoard() {
 		for (let j = 0; j < 5; j++) {
 			const cellEl = document.createElement("board-cell");
 			const cellInnerEl = document.createElement("board-cell-inner");
+			cellInnerEl.style.setProperty("color", "transparent");
 			const cellInputEl = document.createElement("board-cell");
 			const cell = {
 				x: i,
