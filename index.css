@@ -74,7 +74,7 @@ board-render board-cell-inner {
 	position: absolute;
     align-items: center;
 	justify-content: center;
-	font-size: var(--font-size);
+	font-size: calc(var(--font-scale, 1) * var(--font-size));
 	transition: color 0.25s ease-in-out;
     height: 100%;
     width: 100%;

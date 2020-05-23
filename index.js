@@ -85,6 +85,7 @@ function resetGame() {
 		for (let j = 0; j < 5; j++)
 			setCell(board[i][j], 0);
 	newGame();
+	scoreEl.innerText = score;
 }
 
 function setGameState(data) {
@@ -107,9 +108,19 @@ function setCell(cell, val) {
 	} else {
 		cell.innerEl.innerText = val;
 		cell.innerEl.style.setProperty("color", "");
+		console.log(val);
+		if (val >= 10000)
+			cell.innerEl.style.setProperty("--font-scale", 0.48);
+		else if (val >= 1000)
+			cell.innerEl.style.setProperty("--font-scale", 0.6);
+		else if (val >= 100)
+			cell.innerEl.style.setProperty("--font-scale", 0.8);
+		else
+			cell.innerEl.style.setProperty("--font-scale", 1);
 		updateColor(cell);
 	}
 }
+
 function updateColor(cell) {
 	const COLORS = [[158, 193, 207], [158, 224, 158], [253, 253, 151], [254, 177, 68], [255, 102, 99], [204, 153, 201]];
 	let lval = cell.value >= 4 ? Math.min(Math.log2(cell.value) / 2, COLORS.length - 1) : ((cell.value || 2) - 1) / 4;
