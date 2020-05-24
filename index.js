@@ -184,7 +184,7 @@ function setDragHandlers(board) {
 					return startDrag(e);
 			}
 			function startDrag(e) {
-				if (cell.value == "?")
+				if (cell.value == "?" || cell.value <= 0)
 					return;
 				dragging = true;
 				selectedCells = [[cell]];
