@@ -171,6 +171,7 @@ function usernamePrompt(noReset) {
 function setDragHandlers(board) {
 	
 	let dragging = false, wasDragging = false;
+	let contextMenu = false;
 	let lastIsReverseClick = false;
 	let selectedCells;
 	for (let i = 0; i < 5; i++)
@@ -179,6 +180,8 @@ function setDragHandlers(board) {
 			cell.inputEl.onmousedown = function (e) {
 				if (!dragging && (e.button == 0 || e.button == 2)) {
 					lastIsReverseClick = e.button == 2;
+					if (e.button == 2)
+						contextMenu = true;
 					return startDrag(e);
 				}
 			}
@@ -258,6 +261,7 @@ function setDragHandlers(board) {
 		}
 	}
 	window.oncontextmenu = e => !dragging && !wasDragging;
+	window.onmousemove = _ => contextMenu = false;
 	let lastMoveEl;
 	window.ontouchmove = function(e) {
 		const el = document.elementFromPoint(e.touches[0].pageX, e.touches[0].pageY);
@@ -316,8 +320,10 @@ function setDragHandlers(board) {
 			}
 		dragging = false;
 		selectedCells = undefined;
-		wasDragging = true;
-		setTimeout(_ => wasDragging = false, 0);
+		if (!contextMenu) {
+			wasDragging = true;
+			setTimeout(_ => wasDragging = false, 0);
+		}
 	}
 
 }
