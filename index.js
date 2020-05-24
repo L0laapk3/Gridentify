@@ -174,15 +174,12 @@ function setDragHandlers(board) {
 		for (let j = 0; j < 5; j++) {
 			const cell = board[i][j];
 			cell.inputEl.onmousedown = function (e) {
-				if (dragging && e.button == 2) {
-					reverseFinishDrag(e);
-				} else if (e.button == 0)
+				console.log(!dragging && e.button == 0);
+				if (!dragging && e.button == 0)
 					return startDrag(e);
 			}
 			cell.inputEl.ontouchstart = function(e) {
-				if (dragging) {
-					reverseFinishDrag(e);
-				} else
+				if (!dragging)
 					return startDrag(e);
 			}
 			function startDrag(e) {
@@ -239,6 +236,15 @@ function setDragHandlers(board) {
 			};
 		}
 	
+	window.onmousedown = function (e) {
+		if (dragging && e.button == 2)
+			reverseFinishDrag(e);
+	}
+
+	window.ontouchstart = function(e) {
+		if (dragging)
+			reverseFinishDrag(e);
+	}
 	window.oncontextmenu = e => false;
 	let lastMoveEl;
 	window.ontouchmove = function(e) {
