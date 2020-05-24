@@ -173,14 +173,26 @@ function setDragHandlers(board) {
 	for (let i = 0; i < 5; i++)
 		for (let j = 0; j < 5; j++) {
 			const cell = board[i][j];
-			cell.inputEl.onmousedown = cell.inputEl.ontouchstart = function(e) {
+			cell.inputEl.onmousedown = function (e) {
+				if (dragging && e.button == 2) {
+					reverseFinishDrag(e);
+				} else if (e.button == 0)
+					return startDrag(e);
+			}
+			cell.inputEl.ontouchstart = function(e) {
+				if (dragging) {
+					reverseFinishDrag(e);
+				} else
+					return startDrag(e);
+			}
+			function startDrag(e) {
 				if (cell.value == "?")
 					return;
 				dragging = true;
 				selectedCells = [[cell]];
 				cell.el.classList.add("connected");
 				e.preventDefault();
-			};
+			}
 
 			cell.inputEl.onmouseenter = function(e) {
 				if (!dragging)
@@ -227,6 +239,7 @@ function setDragHandlers(board) {
 			};
 		}
 	
+	window.oncontextmenu = e => false;
 	let lastMoveEl;
 	window.ontouchmove = function(e) {
 		const el = document.elementFromPoint(e.touches[0].pageX, e.touches[0].pageY);
@@ -237,7 +250,8 @@ function setDragHandlers(board) {
 			el.onmouseenter(e);
 		e.preventDefault();
 	}
-	window.onmouseup = window.ontouchend = function(e) {
+	window.onmouseup = window.ontouchend = finishDrag;
+	function finishDrag(e) {
 		if (!dragging)
 			return;
 		const lastMove = selectedCells[selectedCells.length-1];
@@ -260,6 +274,12 @@ function setDragHandlers(board) {
 		endDrag();
 		e.stopPropagation();
 	};
+	function reverseFinishDrag(e) {
+		if (!dragging)
+			return;
+		selectedCells[selectedCells.length - 1] = selectedCells[selectedCells.length - 1].reverse();
+		return finishDrag(e);
+	}
 	window.onblur = function(e) {
 		if (!dragging)
 			return;
