@@ -260,8 +260,12 @@ function setDragHandlers(board) {
 			return finishDrag(e);
 		}
 	}
-	window.oncontextmenu = e => !dragging && !wasDragging;
-	window.onmousemove = _ => contextMenu = false;
+	window.oncontextmenu = function(e) {
+		const result = !dragging && !wasDragging;
+		wasDragging = false;
+		return result;
+	};
+	window.onmousemove = _ => {console.log(contextMenu); contextMenu = false};
 	let lastMoveEl;
 	window.ontouchmove = function(e) {
 		const el = document.elementFromPoint(e.touches[0].pageX, e.touches[0].pageY);
@@ -320,10 +324,9 @@ function setDragHandlers(board) {
 			}
 		dragging = false;
 		selectedCells = undefined;
-		if (!contextMenu) {
+		console.log("yo", wasDragging)
+		if (!contextMenu)
 			wasDragging = true;
-			setTimeout(_ => wasDragging = false, 0);
-		}
 	}
 
 }
