@@ -265,7 +265,7 @@ function setDragHandlers(board) {
 		wasDragging = false;
 		return result;
 	};
-	window.onmousemove = _ => {console.log(contextMenu); contextMenu = false};
+	window.onmousemove = _ => contextMenu = false;
 	let lastMoveEl;
 	window.ontouchmove = function(e) {
 		const el = document.elementFromPoint(e.touches[0].pageX, e.touches[0].pageY);
@@ -324,7 +324,6 @@ function setDragHandlers(board) {
 			}
 		dragging = false;
 		selectedCells = undefined;
-		console.log("yo", wasDragging)
 		if (!contextMenu)
 			wasDragging = true;
 	}
