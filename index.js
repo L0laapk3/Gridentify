@@ -124,6 +124,7 @@ function setCell(cell, val) {
 		cell.innerEl.style.setProperty("color", "transparent");
 		cell.innerEl.offsetHeight; // flush css
 		cell.innerEl.style.setProperty("transition", "");
+		updateColor(cell);
 	} else {
 		if (val > 0) {
 			cell.innerEl.innerText = val;
@@ -144,7 +145,8 @@ function setCell(cell, val) {
 
 function updateColor(cell) {
 	const COLORS = [[158, 193, 207], [158, 224, 158], [253, 253, 151], [254, 177, 68], [255, 102, 99], [204, 153, 201], [158, 193, 207]];
-	let lval = cell.value >= 4 ? Math.min(Math.log2(cell.value) / 2, COLORS.length - 1) : ((cell.value || 2) - 1) / 4;
+	const val = cell.value == "?" ? 0 : cell.value;
+	let lval = val >= 4 ? Math.min(Math.log2(val) / 2, COLORS.length - 1) : ((val || 2) - 1) / 4;
 	lval = lval % 6;
 	for (let i = 1; i < COLORS.length; i++)
 		if (--lval <= 0) {
@@ -174,7 +176,6 @@ function setDragHandlers(board) {
 		for (let j = 0; j < 5; j++) {
 			const cell = board[i][j];
 			cell.inputEl.onmousedown = function (e) {
-				console.log(!dragging && e.button == 0);
 				if (!dragging && e.button == 0)
 					return startDrag(e);
 			}
