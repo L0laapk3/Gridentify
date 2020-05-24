@@ -180,7 +180,7 @@ function setDragHandlers(board) {
 					return startDrag(e);
 			}
 			cell.inputEl.ontouchstart = function(e) {
-				if (!dragging)
+				if (!dragging && e.touches.length == 1)
 					return startDrag(e);
 			}
 			function startDrag(e) {
@@ -243,7 +243,7 @@ function setDragHandlers(board) {
 	}
 
 	window.ontouchstart = function(e) {
-		if (dragging)
+		if (dragging && e.touches.length > 1)
 			reverseFinishDrag(e);
 	}
 	window.oncontextmenu = e => false;
