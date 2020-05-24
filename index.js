@@ -171,15 +171,19 @@ function usernamePrompt(noReset) {
 function setDragHandlers(board) {
 	
 	let dragging = false;
+	let lastIsReverseClick = false;
 	let selectedCells;
 	for (let i = 0; i < 5; i++)
 		for (let j = 0; j < 5; j++) {
 			const cell = board[i][j];
 			cell.inputEl.onmousedown = function (e) {
-				if (!dragging && e.button == 0)
+				if (!dragging && (e.button == 0 || e.button == 2)) {
+					lastIsReverseClick = e.button == 2;
 					return startDrag(e);
+				}
 			}
 			cell.inputEl.ontouchstart = function(e) {
+				lastIsReverseClick = false;
 				if (!dragging && e.touches.length == 1)
 					return startDrag(e);
 			}
@@ -190,6 +194,7 @@ function setDragHandlers(board) {
 				selectedCells = [[cell]];
 				cell.el.classList.add("connected");
 				e.preventDefault();
+				e.stopPropagation();
 			}
 
 			cell.inputEl.onmouseenter = function(e) {
@@ -238,13 +243,19 @@ function setDragHandlers(board) {
 		}
 	
 	window.onmousedown = function (e) {
-		if (dragging && e.button == 2)
-			reverseFinishDrag(e);
+		if (!dragging)
+			return;
+		if (e.button == 2 || e.button == 0) {
+			lastIsReverseClick = e.button == 2;
+			return finishDrag(e);
+		}
 	}
 
 	window.ontouchstart = function(e) {
-		if (dragging && e.touches.length > 1)
-			reverseFinishDrag(e);
+		if (dragging && e.touches.length > 1) {
+			lastIsReverseClick = true;
+			return finishDrag(e);
+		}
 	}
 	window.oncontextmenu = e => false;
 	let lastMoveEl;
@@ -261,6 +272,8 @@ function setDragHandlers(board) {
 	function finishDrag(e) {
 		if (!dragging)
 			return;
+		if (lastIsReverseClick)
+			selectedCells[selectedCells.length - 1] = selectedCells[selectedCells.length - 1].reverse();
 		const lastMove = selectedCells[selectedCells.length-1];
 		if (lastMove.length > 1) {
 			let scoreIncrease = selectedCells[0][0].value;
@@ -281,12 +294,6 @@ function setDragHandlers(board) {
 		endDrag();
 		e.stopPropagation();
 	};
-	function reverseFinishDrag(e) {
-		if (!dragging)
-			return;
-		selectedCells[selectedCells.length - 1] = selectedCells[selectedCells.length - 1].reverse();
-		return finishDrag(e);
-	}
 	window.onblur = function(e) {
 		if (!dragging)
 			return;
