@@ -170,7 +170,7 @@ function usernamePrompt(noReset) {
 
 function setDragHandlers(board) {
 	
-	let dragging = false;
+	let dragging = false, wasDragging = false;
 	let lastIsReverseClick = false;
 	let selectedCells;
 	for (let i = 0; i < 5; i++)
@@ -257,7 +257,7 @@ function setDragHandlers(board) {
 			return finishDrag(e);
 		}
 	}
-	window.oncontextmenu = e => false;
+	window.oncontextmenu = e => !dragging && !wasDragging;
 	let lastMoveEl;
 	window.ontouchmove = function(e) {
 		const el = document.elementFromPoint(e.touches[0].pageX, e.touches[0].pageY);
@@ -316,6 +316,8 @@ function setDragHandlers(board) {
 			}
 		dragging = false;
 		selectedCells = undefined;
+		wasDragging = true;
+		setTimeout(_ => wasDragging = false, 0);
 	}
 
 }
