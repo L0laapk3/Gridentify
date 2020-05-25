@@ -106,19 +106,25 @@ function newGame() {
 
 function gameOver() {
 	alert("Game over, you scored " + score + "!");
-	if (!(parseInt(localStorage.highScore) >= score))
-		localStorage.highScore = score;
+	registerScore(score);
 	resetGame();
 }
 
 function resetGame() {
 	if (!loadedData)
 		return;
+	registerScore(score);
 	for (let i = 0; i < 5; i++)
 		for (let j = 0; j < 5; j++)
 			setCell(board[i][j], 0);
 	newGame();
 	scoreEl.innerText = score;
+}
+
+function registerScore(score) {
+	if (!(parseInt(localStorage.highScore) >= score))
+		localStorage.highScore = score;
+	localStorage.allScores = localStorage.allScores ? score : localStorage.allScores + "|" + score;
 }
 
 function setGameState(data) {
