@@ -121,10 +121,15 @@ function resetGame() {
 	scoreEl.innerText = score;
 }
 
+window.onbeforeunload = function(e) {
+	if (loadedData)
+		registerScore(score);
+};
+
 function registerScore(score) {
 	if (!(parseInt(localStorage.highScore) >= score))
 		localStorage.highScore = score;
-	localStorage.allScores = localStorage.allScores ? score : localStorage.allScores + "|" + score;
+	localStorage.allScores = localStorage.allScores ? localStorage.allScores + "|" + score : score;
 }
 
 function setGameState(data) {
