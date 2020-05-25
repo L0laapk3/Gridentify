@@ -19,6 +19,10 @@ const bodyLoadedPromise = new Promise(done => {
 let socket;
 let submitQueue = [];
 
+
+if (!localStorage.username)
+	localStorage.username = "Noname brain";
+
 newGame();
 function newGame() {
 
@@ -31,8 +35,6 @@ function newGame() {
 
 	socket = new WebSocket("wss://server.lucasholten.com:21212");
 	socket.addEventListener('open', function (e) {
-		if (!localStorage.username)
-			usernamePrompt(true);
 		this.send('"' + localStorage.username + '"');
 	});
 	socket.addEventListener('close', function (e) {
@@ -70,21 +72,29 @@ function newGame() {
 					}
 				}
 			}
-			if (submitQueue.length >= 1)
+			if (submitQueue.length >= 1) {
 				this.sendTask();
-			else {
-				for (let i = 0; i < 5; i++)
-					for (let j = 0; j < 4; j++)
-						if (board[i][j].value == board[i][j+1].value)
-							return;
-				for (let i = 0; i < 4; i++)
-					for (let j = 0; j < 5; j++)
-						if (board[i][j].value == board[i+1][j].value)
-							return;
-				this.done = true;
-				gameOver();
+				return;
+			} else {
+				endGameCheck:
+				while (!this.done) {
+					for (let i = 0; i < 5; i++)
+						for (let j = 0; j < 4; j++)
+							if (board[i][j].value == board[i][j+1].value)
+								break endGameCheck;
+					for (let i = 0; i < 4; i++)
+						for (let j = 0; j < 5; j++)
+							if (board[i][j].value == board[i+1][j].value)
+								break endGameCheck;
+					this.done = true;
+					gameOver();
+					return;
+				}
 			}
 		}
+		
+		if (window.bot)
+			window.bot(board);
 	});
 
 	socket.sendTask = function() {
@@ -96,6 +106,8 @@ function newGame() {
 
 function gameOver() {
 	alert("Game over, you scored " + score + "!");
+	if (!(parseInt(localStorage.highScore) >= score))
+		localStorage.highScore = score;
 	resetGame();
 }
 
@@ -282,10 +294,22 @@ function setDragHandlers(board) {
 			return;
 		if (lastIsReverseClick)
 			selectedCells[selectedCells.length - 1] = selectedCells[selectedCells.length - 1].reverse();
-		const lastMove = selectedCells[selectedCells.length-1];
+		doMoves(selectedCells);
+		endDrag();
+		e.stopPropagation();
+	};
+	window.do = function(m) {
+		if (dragging)
+			throw new error("Cannot do bot move now, user is doing a move.");
+		if (submitQueue.length > 0)
+			throw new error("Still executing last move! Preventing double move.");
+		return doMoves([m.map(c => board[c.x, c.y])]);
+	};
+	function doMoves(moves) {
+		const lastMove = moves[moves.length-1];
 		if (lastMove.length > 1) {
-			let scoreIncrease = selectedCells[0][0].value;
-			for (let move of selectedCells) {
+			let scoreIncrease = moves[0][0].value;
+			for (let move of moves) {
 				scoreIncrease *= move.length;
 				score += scoreIncrease;
 				for (let i = 0; i < move.length - 1; i++)
@@ -295,12 +319,10 @@ function setDragHandlers(board) {
 			scoreEl.innerText = score;
 			const queueEmpty = submitQueue.length == 0;
 
-			submitQueue.push(...selectedCells);
+			submitQueue.push(...moves);
 			if (queueEmpty)
 				socket.sendTask();
 		}
-		endDrag();
-		e.stopPropagation();
 	};
 	window.onblur = function(e) {
 		if (!dragging)
