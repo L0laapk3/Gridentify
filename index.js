@@ -6,7 +6,7 @@ const bodyLoadedPromise = new Promise(done => {
 	window.onload = function() {
 		this.createBoard();
 		document.getElementsByTagName("name-container")[0].onclick = usernamePrompt;
-		document.getElementsByTagName("name")[0].innerText = localStorage.username;
+		setUsername();
 		scoreEl = document.getElementsByTagName("score")[0];
 		document.getElementsByTagName("reset-container")[0].onclick = resetGame;
 		
@@ -167,6 +167,13 @@ function updateColor(cell) {
 		}
 }
 
+function setUsername() {
+	const nameEl = document.getElementsByTagName("name")[0];
+	nameEl.style.setProperty("--font-scale", 1);
+	nameEl.offsetWidth; // flush css
+	nameEl.innerText = localStorage.username;
+	nameEl.style.setProperty("--font-scale", Math.min(1, 207/nameEl.offsetWidth));
+}
 
 function usernamePrompt(noReset) {
 	let newUsername;
@@ -174,7 +181,8 @@ function usernamePrompt(noReset) {
 		newUsername = prompt("Change username");
 	if (newUsername === null || newUsername.length == 0 || newUsername == localStorage.username)
 		return;
-	document.getElementsByTagName("name")[0].innerText = localStorage.username = newUsername;
+	localStorage.username = newUsername;
+	setUsername();
 	if (noReset !== true)
 		resetGame();
 }

@@ -195,7 +195,8 @@ name-container {
 }
 score, name {
 	margin-top: calc(0.05 * var(--font-size));
-	font-size: calc(0.5 * var(--font-size));
-	display: block;
+	font-size: calc(0.5 * var(--font-size) * var(--font-scale, 1));
+    line-height: calc(0.6 * var(--font-size));
+	display: inline-block;
     white-space: nowrap;
 }
