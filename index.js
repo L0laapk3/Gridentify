@@ -348,7 +348,6 @@ function setDragHandlers(board) {
 		}
 	};
 	function doMoves(moves) {
-		console.log(moves);
 		const lastMove = moves[moves.length-1];
 		if (lastMove.length > 1) {
 			let scoreIncrease = moves[0][0].value;
