@@ -9,6 +9,8 @@ const bodyLoadedPromise = new Promise(done => {
 		setUsername();
 		scoreEl = document.getElementsByTagName("score")[0];
 		document.getElementsByTagName("reset-container")[0].onclick = resetGame;
+
+		console.log("To create a javascript bot, define a window.bot function. the move function can be used to make a move.");
 		
 		bodyLoaded = true;
 		if (loadedData)
@@ -17,7 +19,7 @@ const bodyLoadedPromise = new Promise(done => {
 });
 
 let socket;
-let submitQueue = [];
+let submitQueue;
 
 
 if (!localStorage.username)
@@ -32,6 +34,8 @@ function newGame() {
 	}
 	score = 0;
 	loadedData = undefined;
+
+	submitQueue = [];
 
 	socket = new WebSocket("wss://server.lucasholten.com:21212");
 	socket.addEventListener('open', function (e) {
@@ -106,7 +110,6 @@ function newGame() {
 
 function gameOver() {
 	alert("Game over, you scored " + score + "!");
-	registerScore(score);
 	resetGame();
 }
 
@@ -317,14 +320,35 @@ function setDragHandlers(board) {
 		endDrag();
 		e.stopPropagation();
 	};
-	window.do = function(m) {
-		if (dragging)
-			throw new error("Cannot do bot move now, user is doing a move.");
-		if (submitQueue.length > 0)
-			throw new error("Still executing last move! Preventing double move.");
-		return doMoves([m.map(c => board[c.x, c.y])]);
+	window.move = function(m) {
+		try {
+			if (dragging)
+				throw new Error("Cannot do bot move now, user is doing a move");
+			if (submitQueue.length > 0)
+				throw new Error("Still executing last move! Preventing double move");
+			if (m.length < 2)
+				throw new Error("Move is too short!");
+			const move = m.map(c => board[c.x][c.y]);
+			let last = move[0];
+			for (let i = 1; i < move.length; i++) {
+				const curr = move[i];
+				if (Math.abs(last.x - curr.x) + Math.abs(last.y - curr.y) != 1)
+					throw new Error("Illegal move! Chain not connected");
+				if (last.value != curr.value)
+					throw new this.Error("Illegal move! Blocks don't have the same value");
+				for (let j = 0; j < i; j++)
+					if (curr == move[j])
+						throw new Error("Illegal move! A block was reused");
+				last = curr;
+			}
+			return doMoves([move]);
+		} catch (err) {
+			console.error(m);
+			throw err;
+		}
 	};
 	function doMoves(moves) {
+		console.log(moves);
 		const lastMove = moves[moves.length-1];
 		if (lastMove.length > 1) {
 			let scoreIncrease = moves[0][0].value;
