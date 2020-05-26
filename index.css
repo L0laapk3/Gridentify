@@ -196,7 +196,18 @@ name-container {
 score, name {
 	margin-top: calc(0.05 * var(--font-size));
 	font-size: calc(0.5 * var(--font-size) * var(--font-scale, 1));
-    line-height: calc(0.6 * var(--font-size));
+	line-height: calc(0.6 * var(--font-size));
 	display: inline-block;
-    white-space: nowrap;
+	white-space: nowrap;
+	position: relative;
+}
+score::after {
+	counter-reset: score-increase-preview var(--score-increase-preview);
+	content: "+" counter(score-increase-preview);
+	position: absolute;
+	opacity: var(--score-increase-preview, -1);
+	font-size: calc(0.5 * var(--font-size) * min(var(--font-scale, 1), 0.5));
+	line-height: calc(0.6 * var(--font-size) * min(var(--font-scale, 1), 0.5));
+	color: #303030;
+	bottom: calc(0.1 * var(--font-size) * min(var(--font-scale, 1), 0.75));
 }

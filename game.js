@@ -261,6 +261,7 @@ function setDragHandlers(board) {
 							nextCell.el.classList.remove("connected");
 						}
 					}
+					updateScorePreview();
 					return;
 				}
 
@@ -276,9 +277,13 @@ function setDragHandlers(board) {
 					lastMove.push(cell);
 				else 
 					selectedCells.push([lastMove[lastMove.length-1], cell]);
+				updateScorePreview();
 			};
 		}
 	
+	function updateScorePreview() {
+		scoreEl.style.setProperty("--score-increase-preview", dragging && selectedCells[0].length > 1 ? selectedCells.map(m => m.length * m[1].value).reduce((a, b) => a + b) : -1);
+	}
 	window.onmousedown = function (e) {
 		if (!dragging)
 			return;
@@ -388,6 +393,7 @@ function setDragHandlers(board) {
 			}
 		dragging = false;
 		selectedCells = undefined;
+		updateScorePreview();
 		if (!contextMenu)
 			wasDragging = true;
 	}
@@ -401,12 +407,10 @@ function createBoard() {
 
 	const boardEl = document.createElement("board");
 	const renderEl = document.createElement("board-render");
-	const animationEl = document.createElement("board-animation");
 	const inputEl = document.createElement("board-input");
 	board = [];
 	board.el = boardEl;
 	board.renderEl = renderEl;
-	board.animationEl = animationEl;
 	board.inputEl = inputEl;
 
 	for (let i = 0; i < 5; i++) {
@@ -441,7 +445,6 @@ function createBoard() {
 	}
 
 	boardEl.appendChild(renderEl);
-	boardEl.appendChild(animationEl);
 	boardEl.appendChild(inputEl);
 
 	setDragHandlers(board);	
