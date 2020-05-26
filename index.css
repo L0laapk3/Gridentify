@@ -172,12 +172,12 @@ reset-container, score-container, name-container {
 	user-select: none;
 }
 score-container {
-	width: calc(1.4 * var(--font-size));
+	width: calc(1.545 * var(--font-size));
 	right: 1%;
 }
 reset-container {
 	width: calc(0.9 * var(--font-size));
-	right: calc(2.2 * var(--font-size));
+	right: calc(2.345 * var(--font-size));
 	cursor: pointer;
 }
 reset-container > svg {
@@ -186,7 +186,7 @@ reset-container > svg {
 	margin-left: calc(0.02 * var(--font-size));
 }
 name-container {
-	width: calc(3.3 * var(--font-size));
+	width: calc(3.155 * var(--font-size));
 	left: 1%;
 	cursor: pointer;
 	display: block;
