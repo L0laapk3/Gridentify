@@ -198,6 +198,7 @@ score, name {
 	font-size: calc(0.5 * var(--font-size) * var(--font-scale, 1));
 	line-height: calc(0.6 * var(--font-size));
 	display: inline-block;
+	margin: 0 calc(-0.15 * var(--font-size));
 	white-space: nowrap;
 	position: relative;
 }

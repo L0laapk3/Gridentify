@@ -186,13 +186,19 @@ function setUsername() {
 	nameEl.style.setProperty("--font-scale", 1);
 	nameEl.offsetWidth; // flush css
 	nameEl.innerText = localStorage.username;
-	nameEl.style.setProperty("--font-scale", Math.min(1, 207/nameEl.offsetWidth));
+	nameEl.style.setProperty("--font-scale", Math.min(1, 217.599/nameEl.offsetWidth));
 }
 
 function usernamePrompt(noReset) {
 	let newUsername;
-	while ((!localStorage.username && (newUsername === null || newUsername === undefined || newUsername.length == 0)) || newUsername === undefined)
-		newUsername = prompt("Change username");
+	let text = "Change username";
+	while ((!localStorage.username && (newUsername === null || newUsername === undefined || newUsername.length == 0)) || newUsername === undefined) {
+		newUsername = prompt(text);
+		if (newUsername && newUsername.length > 16) {
+			text = "Too long, change username"
+			newUsername = undefined;
+		}
+	}
 	if (newUsername === null || newUsername.length == 0 || newUsername == localStorage.username)
 		return;
 	localStorage.username = newUsername;
