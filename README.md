@@ -2,4 +2,4 @@
 Gridentify web client!
 
 ## Play
-https://git.io/onitama
+https://git.io/gridentify
